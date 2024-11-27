@@ -16,3 +16,30 @@ Objectif : Créer une classe Config pour gérer la configuration générale d'un
         Une méthode statique getAppName() qui retourne le nom de l'application.
 
         */
+
+        class Config {
+            private const APP_NAME = "ReactWebApp";
+        
+            private static array $settings = [
+                'debug_mode' => true,
+                'db_url' => 'mysql:host=localhost;dbname=ReactApp',
+                'version' => '1.0.0'
+            ];
+            
+            public static function setSetting( string $key, $value){
+                self::$settings[$key] = $value;
+            }
+            public static function getSetting(string $key){
+                return self::$settings[$key] ?? null;
+            }
+            public static function getAppName(): string{
+                return self::APP_NAME;
+            }
+        }
+
+    echo "Nom de l'app : " . Config::getAppName() . "<hr>";
+    echo "Valeur dans settings de la clé db_url : " . Config::getSetting("db_url") . "<hr>";
+    echo "Remplacement de valeur dans db_url...<hr>";
+    Config::setSetting("db_url", "mysql:host=localhost;dbname=OnPrefereLePhp") . "<hr>";
+    echo "Valeur dans settings de la clé db_url : " . Config::getSetting("db_url") . "<hr>";
+

@@ -31,6 +31,9 @@ class Entreprise
         // $this->{"monEmploye" . $this->nbrEmploye} = new $employe;
 
         // J'insère dans cette nouvelle prop, un objet de type d'employé qui me sera fourni en param de la méthode (Electricien, Plombier, autre)
+
+        // Ici $this-> fait référence à l'objet courant/en cours d'utilisation
+        // Donc sur l'objet $entreprise on appelle la propriété monEmploye1, puis monEmploye2 etc, pour y insérer une instance d'un type d'employé (contenu dans le param $employe)
         $this->$monEmploye = new $employe;
     }
 }

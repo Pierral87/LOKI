@@ -13,3 +13,25 @@ Objectif : Simuler un contrôle d’accès à une page d’administration en uti
     Si l'utilisateur n'a pas le rôle d'admin, utilisez die() ou exit() pour afficher un message d'erreur et interrompre l'exécution de la page. Sinon, affiche le contenu de la page d'administration.
 
 */
+
+session_start();
+
+$session = &$_SESSION;
+
+$session['user'] = [
+    "id" => 1,
+    "username" => "Julien",
+    "email" => "julien@mail.com",
+    "role" => "admin"
+];
+
+$user = &$session['user'];
+
+if (!isset($user) || $user['role'] !== "admin") {
+    // throw new Exception("Accès refusé.");
+    // header("location : index.php");
+    exit;
+}
+
+// contenu de la page
+echo "Bonjour " . $user['username'] . ", soit le bienvenu!";

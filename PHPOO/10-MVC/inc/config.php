@@ -7,3 +7,5 @@ if (!isset($_SESSION["users"])) {
         ['id' => 2, 'nom' => 'Martin', 'email' => 'martin@example.com']
     );
 }
+// Il faut changer cette const pour la faire correspondre à votre arborescence 
+define("URL", "http://localhost/loki/PHPOO/10-MVC/");

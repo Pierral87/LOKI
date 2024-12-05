@@ -20,10 +20,36 @@ class UserModel
         return $this->users;
     }
 
-    public function selectOneModel($id)
+    public function modelSelectOne($id)
     {
 
         // return du seul user ayant cet id 
+        return $this->users[$id];
+    }
+
+    public function modelAdd($nom, $email)
+    {
+        $this->users[] = ["id" => end($this->users)["id"] + 1, "nom" => $nom, "email" => $email];
+        $_SESSION["users"] = $this->users;
+    }
+
+    public function modelUpdate($id, $nom, $email)
+    {
+        $this->users[$id] = ["id" => $id, "nom" => $nom, "email" => $email];
+        $_SESSION["users"] = $this->users;
+    }
+
+    public function modelDelete($id)
+    {
+        foreach ($_SESSION["users"] as $index => $user) {
+            if ($user['id'] == $id) {
+                unset($this->users[$index]);
+                $_SESSION["users"] = $this->users;
+
+                return true;
+            }
+        }
+        return false;
     }
 
 }

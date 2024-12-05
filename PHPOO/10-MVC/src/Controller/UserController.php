@@ -66,11 +66,11 @@ class UserController
             // S'il a demandé à modifier un user 
             elseif ($op == "update") {
                 var_dump($_GET);
-                $this->update();
+                $this->update($id);
             } 
             // S'il a demandé à supprimer un utilisateur
             elseif ($op == "delete") {
-                $this->delete();
+                $this->delete($id);
             // Sinon, on affiche tout
             } else {
                 $this->selectAll();
@@ -107,6 +107,67 @@ class UserController
 
     public function select($id) 
     {
-        // Je dois lancer la méthode selectOneModel($id)
+        // Je dois lancer la méthode modelSelectOne($id)
+        $this->render("layout.php", "OneUser.php", [
+            "title" => "Information de l'utilisateur $id",
+            "data" => $this->model->modelSelectOne($id)
+        ]);
+    }
+
+    public function add()
+    {
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Récupération des données du formulaire
+            $nom = $_POST['nom'] ?? '';
+            $email = $_POST['email'] ?? '';
+
+            // Validation basique
+            if (!empty($nom) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                // Appel au modèle pour ajouter l'utilisateur
+                $this->model->modelAdd($nom, $email);
+                // Redirection vers la liste des utilisateurs
+                header('Location: ' . URL . 'index.php');
+                // var_dump($_POST);
+                exit;
+            } else {
+                $message = "Erreur : nom ou email invalide.";
+            }
+        }
+        $this->render("layout.php", "AddUser.php", [
+            "title" => "Ajout d'un utilisateur",
+        ]);
+    }
+
+    public function update($id)
+    {
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Récupération des données soumises
+            $id = $_POST['id'] ?? null;
+            $nom = $_POST['nom'] ?? '';
+            $email = $_POST['email'] ?? '';
+
+            // Validation basique
+            if ($id !== null && !empty($nom) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                // Appel au modèle pour mettre à jour les données
+                $this->model->modelUpdate($id, $nom, $email);
+
+                // Redirection vers la liste des utilisateurs
+                header('Location: ' . URL . 'index.php');
+                exit;
+            }
+        }
+
+        $this->render("layout.php", "UpdateUser.php", [
+            "title" => "Modification d'un utilisateur",
+            "data" => $this->model->modelSelectOne($id)
+        ]);
+    }
+
+    public function delete($id) {
+        $this->model->modelDelete($id);
+        header('Location: ' . URL . 'index.php');
+        exit;
     }
 }

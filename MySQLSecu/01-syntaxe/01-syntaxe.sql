@@ -306,5 +306,206 @@ SELECT COUNT(*) AS nombre_commerciaux FROM employes WHERE service = "commercial"
 -- MIN() & MAX()
 -- salaire minimum
 SELECT MIN(salaire) FROM employes;
++--------------+
+| MIN(salaire) |
++--------------+
+|         1390 |
++--------------+
 -- salaire maximum
 SELECT MAX(salaire) FROM employes;
++--------------+
+| MAX(salaire) |
++--------------+
+|         5000 |
++--------------+
+
+-- EXERCICE : Affichez le salaire minimum ainsi que le prenom de l'employé ayant ce salaire (Julien Cottet)
+SELECT prenom, MIN(salaire) FROM employes; -- Pas d'erreur mais le résultat est incohérent, il nous sort Jean-Pierre !
++-------------+--------------+
+| prenom      | MIN(salaire) |
++-------------+--------------+
+| Jean-pierre |         1390 |
++-------------+--------------+
+-- MIN() c'est une fonction d'agrégation elle ne peut retourner qu'un seul résultat !!! 
+-- Et la requête me sort ensuite le premier prénom qu'elle trouve dans la table soit : Jean-Pierre 
+
+-- 2 solutions 
+
+-- 1 - Requête imbriquée 
+-- SELECT prenom, salaire FROM employes WHERE salaire = 1390;
+SELECT prenom, salaire FROM employes WHERE salaire = (SELECT MIN(salaire) FROM employes);
++--------+---------+
+| prenom | salaire |
++--------+---------+
+| Julien |    1390 |
++--------+---------+
+
+-- 2 - ORDER BY et LIMIT
+SELECT prenom, salaire FROM employes ORDER BY salaire ASC LIMIT 1;
++--------+---------+
+| prenom | salaire |
++--------+---------+
+| Julien |    1390 |
++--------+---------+
+
+
+-- IN & NOT IN pour tester plusieurs valeurs 
+-- Affichage des employés des services commercial et comptabilite 
+SELECT * FROM employes WHERE service = "commercial" OR service = "comptabilite";
+SELECT * FROM employes WHERE service IN ("commercial", "comptabilite");
++-------------+-----------+---------+------+--------------+---------------+---------+
+| id_employes | prenom    | nom     | sexe | service      | date_embauche | salaire |
++-------------+-----------+---------+------+--------------+---------------+---------+
+|         388 | Clement   | Gallet  | m    | commercial   | 2010-12-15    |    2300 |
+|         415 | Thomas    | Winter  | m    | commercial   | 2011-05-03    |    3550 |
+|         509 | Fabrice   | Grand   | m    | comptabilite | 2011-12-30    |    2900 |
+|         547 | Melanie   | Collier | f    | commercial   | 2012-01-08    |    3100 |
+|         627 | Guillaume | Miller  | m    | commercial   | 2012-07-02    |    1900 |
+|         655 | Celine    | Perrin  | f    | commercial   | 2012-09-10    |    2700 |
+|         933 | Emilie    | Sennard | f    | commercial   | 2017-01-11    |    1800 |
++-------------+-----------+---------+------+--------------+---------------+---------+
+
+-- Tous les employés sauf ceux des services commercial et comptabilite 
+SELECT * FROM employes WHERE service NOT IN ("commercial", "comptabilite");
+
+-- Plusieurs conditions : AND 
+-- On veut les employes du service commercial ayant un salaire inférieur ou égal à 2000 
+SELECT * FROM employes WHERE service = "commercial" AND salaire <= 2000;
+
+-- Vous pouvez sauter des lignes si vous le souhaitez, cela ne dérangera pas l'exécution de la requête en console
+SELECT * 
+FROM employes 
+WHERE service = "commercial" 
+AND salaire <= 2000;
+
+-- L'une ou l'autre d'un ensemble de conditions : OR 
+-- EXERCICE : Employes du service production ayant un salaire égal à 1900 ou 2300...  
+SELECT * FROM employes WHERE service = "production" AND salaire = 1900 OR salaire = 2300; -- Résultat incorrent, on a aussi Clement du service commercial ??? 
+
+SELECT * FROM employes WHERE (service = "production" AND salaire = 1900) OR (salaire = 2300); -- le système le comprend comme ceci (on a rajouté les parenthèses pour visualiser)
+
+
+SELECT * FROM employes WHERE service = "production" AND salaire = 1900 OR  service = "production" AND salaire = 2300; 
+SELECT * FROM employes WHERE service = "production" AND (salaire = 1900 OR salaire = 2300); 
+SELECT * FROM employes WHERE service = "production" AND salaire IN (1900,2300); 
+
+-- GROUP BY pour regrouper selon un ou plusieurs champs (généralement utilisé avec des fonctions d'agrégation)
+-- Nombre d'employes par service 
+SELECT COUNT(*), service FROM employes; -- Résultat incorrect ! COUNT() étant une fonction d'agrégation, elle ne peut renvoyer qu'une ligne, le service demandé n'a pas de rapport avec l'appel de cette fonction d'agrégation
++----------+-----------+
+| COUNT(*) | service   |
++----------+-----------+
+|       20 | direction |
++----------+-----------+
+
+SELECT * FROM employes ORDER BY service; -- Visualition ici de chaque bloc par service (grace au group by)
+
+-- Avec GROUP BY il est possible de demander de nous renvoyer le COUNT() en regroupant par service
+-- En quelques sortes, chaque "bloc" de service est "extrait" du résultat de base et la fonction d'agrégation s'applique à chaque bloc séparément
+SELECT COUNT(*) as nombre_employes, service FROM employes GROUP BY service;
++-----------------+---------------+
+| nombre_employes | service       |
++-----------------+---------------+
+|               2 | direction     |
+|               6 | commercial    |
+|               2 | production    |
+|               3 | secretariat   |
+|               1 | comptabilite  |
+|               3 | informatique  |
+|               1 | communication |
+|               1 | juridique     |
+|               1 | assistant     |
++-----------------+---------------+
+-- Il est possible de mettre une condition sur un GROUP BY : HAVING (ayant) 
+-- Nombre d'employés par service, pour les services ayant plus de 2 employés
+SELECT COUNT(*) as nombre_employes, service FROM employes GROUP BY service HAVING COUNT(*) > 2;
++-----------------+--------------+
+| nombre_employes | service      |
++-----------------+--------------+
+|               6 | commercial   |
+|               3 | secretariat  |
+|               3 | informatique |
++-----------------+--------------+
+
+
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+---- REQUETES D'INSERTION (Action : enregistrement) -------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+-- Ici je spécifie NULL pour la clé primaire (id_employes) pour la laisser s'auto incrémenter
+INSERT INTO employes (id_employes, prenom, nom, salaire, sexe, service, date_embauche) VALUES (NULL, "Pierra", "Lacaze", 20000, "m", "formation", CURDATE());
+
+-- Je peux ne pas citer la clé dans les champs dans lesquels insérer, de toute façon elle va s'auto incrémenter
+INSERT INTO employes (prenom, nom, salaire, sexe, service, date_embauche) VALUES ("Pierro", "Lacaze", 20000, "m", "formation", CURDATE());
+
+-- Je peux aussi omettre de citer la première paranthèse des champs dans lesquels j'insère, mais il faudra citer TOUS les champs dans leur ordre de la structure de la table 
+INSERT INTO employes VALUES (NULL, "Pierru", "Lacaze", "m", "formation", CURDATE(), 20000  );
+
+
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+---- REQUETES DE MODIFICATION (Action : modification) -----------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+-- On modifie le salaire d'un employe 
+UPDATE employes SET salaire = 2000 WHERE id_employes = 991;
+-- On peut aussi faire plusieurs modifications à la fois 
+UPDATE employes SET salaire = 2200, service = "informatique" WHERE id_employes = 992;
+
+-- REPLACE 
+-- Dans le cas d'une nouvelle valeur, le REPLACE va se comporter comme un INSERT INTO
+-- Si la valeur est trouvée, elle sera "modifiée"
+REPLACE INTO employes VALUES (994, "Polo", "Lolo", "m", "Web", CURDATE(), 3000);
+
+REPLACE INTO employes VALUES (994, "Polo", "Lolo", "m", "Web", CURDATE(), 30000);
+
+-- ATTENTION : NE JAMAIS UTILISER REPLACE 
+    -- En fait, REPLACE INTO ne modifie pas un enregistrement, il le supprime pour le réinsérer ! 
+        -- TRES GRAVE sur une base possedant des relations en CASCADE entre ses tables (CASCADE = réaction en chaine, pourrait supprimer des centaines/milliers d'autres enregistrement alors que l'on a souhaité simplement faire une modification !... :(   ))
+
+
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+---- REQUETES DE SUPPRESSION (Action : Supprimer) ---------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------    
+DELETE FROM employes;  -- Cette requête supprime toutes les données de la table (équivaut à TRUNCATE, mais c'est une requête de type CRUD et non pas structure (attention au niveau des transactions))
+DELETE FROM employes WHERE id_employes = 990;
+-- On supprime généralement par rapport à une ou plusieurs conditions 
+DELETE FROM employes WHERE id_employes > 800;
+
+DELETE FROM employes WHERE service = "commercial" AND id_employes != 415;
+
+
+
+
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+---- EXERCICES : ------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------   
+
+-- 1 -- Afficher la profession de l'employé 547.
+-- 2 -- Afficher la date d'embauche d'Amandine.	
+-- 3 -- Afficher le nom de famille de Guillaume	
+-- 4 -- Afficher le nombre de personne ayant un n° id_employes commençant par le chiffre 5.	
+-- 5 -- Afficher le nombre de commerciaux.
+-- 6 -- Afficher le salaire moyen des informaticiens 
+-- 7 -- Afficher les 5 premiers employés après avoir classé leur nom de famille par ordre alphabétique. 
+-- 8 -- Afficher le coût des commerciaux sur 1 année.		
+-- 9 -- Afficher le salaire moyen par service. 
+-- 10 -- Afficher le nombre de recrutement sur l'année 2010 
+-- 11 -- Afficher le salaire moyen appliqué lors des recrutements sur la période allant de 2015 a 2017
+-- 12 -- Afficher le nombre de service différent 
+-- 13 -- Afficher tous les employés (sauf ceux du service production et secrétariat)
+-- 14 -- Afficher conjointement le nombre d'homme et de femme dans l'entreprise
+-- 15 -- Afficher les commerciaux ayant été recrutés avant 2012 de sexe masculin et gagnant un salaire supérieur a 2500 €
+-- 16 -- Qui a été embauché en dernier 
+-- 17 -- Afficher les informations sur l'employé du service commercial gagnant le salaire le plus élevé
+-- 18 -- Afficher le prénom du comptable gagnant le meilleur salaire 
+-- 19 -- Afficher le prénom de l'informaticien ayant été recruté en premier 
+-- 20 -- Augmenter chaque employé de 100 €
+-- 21 -- Supprimer les employés du service secrétariat

@@ -84,12 +84,43 @@ SELECT titre FROM livre WHERE id_livre IN
 +-------------------------+
 
 -- EXERCICE 1: Quels sont les prénoms des abonnés n'ayant pas rendu un livre à la bibliotheque.
+SELECT prenom FROM abonne WHERE id_abonne IN 
+    (SELECT id_abonne FROM emprunt WHERE date_rendu IS NULL);
 -- EXERCICE 2 : Nous aimerions connaitre le(s) n° des livres empruntés par Chloé
+SELECT id_livre FROM emprunt WHERE id_abonne IN 
+    (SELECT id_abonne FROM abonne WHERE prenom = "Chloe");
 -- EXERCICE 3: Affichez les prénoms des abonnés ayant emprunté un livre le 07/12/2016.
+SELECT prenom FROM abonne WHERE id_abonne IN 
+    (SELECT id_abonne FROM emprunt WHERE date_sortie = "2016-12-07");
 -- EXERCICE 4: combien de livre Guillaume a emprunté à la bibliotheque ?
+SELECT COUNT(*) FROM emprunt WHERE id_abonne IN 
+    (SELECT id_abonne FROM abonne WHERE prenom = "Guillaume");
 -- EXERCICE 5: Affichez la liste des abonnés ayant déjà emprunté un livre d'Alphonse Daudet
+SELECT prenom FROM abonne WHERE id_abonne IN 
+    (SELECT id_abonne FROM emprunt WHERE id_livre IN 
+        (SELECT id_livre FROM livre WHERE auteur LIKE "%Daudet"));
 -- EXERCICE 6: Nous aimerions connaitre les titres des livres que Chloe a emprunté à la bibliotheque.
+SELECT titre FROM livre WHERE id_livre IN 
+    (SELECT id_livre FROM emprunt WHERE id_abonne = 
+        (SELECT id_abonne FROM abonne WHERE prenom = "Chloe"));
 -- EXERCICE 7: Nous aimerions connaitre les titres des livres que Chloe n'a pas emprunté à la bibliotheque.
+SELECT titre FROM livre WHERE id_livre NOT IN 
+    (SELECT id_livre FROM emprunt WHERE id_abonne = 
+        (SELECT id_abonne FROM abonne WHERE prenom = "Chloe"));
 -- EXERCICE 8: Nous aimerions connaitre les titres des livres que Chloe a emprunté à la bibliotheque ET qui n'ont pas été rendu.
--- EXERCICE 9 :  Qui a emprunté le plus de livre à la bibliotheque ?
+SELECT DISTINCT titre FROM livre WHERE id_livre IN 
+    (SELECT id_livre FROM emprunt WHERE id_abonne IN 
+        (SELECT id_abonne FROM abonne WHERE prenom = "Chloe") AND date_rendu IS NULL);
+-- EXERCICE 9 : Qui a emprunté le plus de livre à la bibliotheque ?
+SELECT prenom FROM abonne WHERE id_abonne = 
+    (SELECT id_abonne FROM emprunt GROUP BY id_abonne ORDER BY COUNT(*) DESC LIMIT 1);
+
+
+
+-- La requête ci dessous si on veut afficher plusieurs abonnées si ils ont le même nombre d'emprunt (si le nombre le plus élevé d'emprunts est 3, et qu'ils sont plusieurs à avoir 3 emprunts, je peux en retourner plusieurs, contrairement à la requête ci dessus)
+-- On passe ici par la création d'une table temporaire via un jeu de résultat, c'est pour ça que je fais un FROM sur une requête et non une table, et je dois donner un alias à cette table pour que cela fonctionne
+SELECT prenom FROM abonne WHERE id_abonne IN 
+    (SELECT id_abonne FROM emprunt GROUP BY id_abonne HAVING COUNT(*) = 
+        (SELECT MAX(nbr_emprunt) FROM (SELECT COUNT(*) AS nbr_emprunt FROM emprunt GROUP BY id_abonne) AS compte));
+
 

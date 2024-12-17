@@ -267,5 +267,24 @@ FROM emprunt RIGHT JOIN abonne USING (id_abonne); -- Ici on a fait la même chos
 +-----------+----------+
 
 -- EXERCICE 1 : Affichez tous les livres sans exception puis les id_abonne ayant emprunté ces livres si c'est le cas
+SELECT titre, id_abonne FROM livre LEFT JOIN emprunt USING (id_livre);
 -- EXERCICE 2 : Affichez tous les prénoms des abonnés et s'ils ont fait des emprunts, affichez les id_livre, auteur et titre
+SELECT prenom, id_livre, auteur, titre 
+FROM abonne LEFT JOIN emprunt USING (id_abonne) LEFT JOIN livre USING (id_livre);
 -- EXERCICE 3 : Affichez tous les prénoms des abonnés, tous les titres des livres et les informations des emprunts également 
+
+SELECT a.prenom, l.titre, e.date_sortie, e.date_rendu
+FROM abonne a
+LEFT JOIN emprunt e  USING (id_abonne)
+LEFT JOIN livre l USING (id_livre)
+UNION
+SELECT a.prenom, l.titre, e.date_sortie, e.date_rendu
+FROM livre l
+LEFT JOIN emprunt e USING (id_livre)
+LEFT JOIN abonne a USING (id_abonne);
+
+
+SELECT a.prenom, l.titre, e.date_sortie, e.date_rendu
+FROM abonne a
+LEFT JOIN emprunt e  USING (id_abonne)
+RIGHT JOIN livre l USING (id_livre);

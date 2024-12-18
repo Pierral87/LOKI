@@ -44,7 +44,9 @@ SELECT NOW(); -- Pareil, date et heure de l'instant T
 -- FROM_UNIXTIME() -- Transforme un timestamp en date/heure normale
 SELECT UNIX_TIMESTAMP(CURDATE()); -- Transforme une date en timestamp 
 
-SELECT DAYNAME(CURDATE());
+SELECT DAYNAME(CURDATE()); -- Le nom du jour en anglais
 
+
+-- DATE_FORMAT nous permet de formater un champ de type date au format choisi, (type fr ou autre) en suivant les tokens de remplacement (voir doc)
 SELECT prenom, DATE_FORMAT(date_sortie, "%d/%m/%Y") as date_fr FROM abonne, emprunt 
 WHERE abonne.id_abonne = emprunt.id_abonne;

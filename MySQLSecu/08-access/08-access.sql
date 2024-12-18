@@ -45,6 +45,10 @@ TO "pierral"@"localhost";
 FLUSH PRIVILEGES;
 
 
+-- Pour voir les droits utilisateurs 
+SHOW GRANTS FOR 'root'@'localhost';
+
+
 -- Limitation des ressources 
 
 -- MAX_QUERIES_PER_HOUR : le nombre de requêtes qu'il peut exécuter par heure 

@@ -113,7 +113,7 @@ echo $data->prenom . "<hr>";
 
 //  Une ligne traitée avec fetch, n'existe plus dans la réponse ! C'est pour ça que je ne peux pas refaire fetch plusieurs fois à la suite sur ce résultat à une seule ligne 
 
-echo "<h2>03 - Requêtes de sélection pour plusieurs lignes de résultat</h2>";
+echo "<h2>04 - Requêtes de sélection pour plusieurs lignes de résultat</h2>";
 
 $stmt = $pdo->query("SELECT * FROM employes");
 
@@ -207,5 +207,87 @@ while ($ligne = $stmt->fetch(PDO::FETCH_ASSOC)) {
 }
 
 echo '</table>';
-
 echo '<hr><hr><hr>';
+
+
+echo "<h2>05 - Requêtes de sélection pour plusieurs lignes de résultat avec fetchAll()</h2>";
+
+// fetch() permet de traiter une seule ligne à la fois !
+// fetchAll() traite toutes les lignes en une seule fois sauf que l'on obtient un tableau array à plusieurs niveaux
+
+$stmt = $pdo->query("SELECT * FROM employes");
+
+$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+var_dump($data);
+
+echo "Premier employé de la BDD : " . $data[0]["prenom"] . "<hr>";
+
+
+//  EXERCICE : Affichez les noms et prénoms des employés dans une liste ul li 
+// Le faire avec fetch 
+// Le faire aussi avec fetchAll
+
+
+$stmt = $pdo->query("SELECT nom, prenom FROM employes");
+echo "<ul>";
+while ($data = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo "<li>" . $data["nom"] . " " . $data["prenom"] . "</li>";
+}
+echo "</ul><hr><hr>";
+
+$stmt = $pdo->query("SELECT nom, prenom FROM employes");
+$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+echo "<ul>";
+foreach($data AS $employe){
+    echo "<li>" . $employe["nom"] . " " . $employe["prenom"] . "</li>";
+}
+echo "</ul>";
+
+
+echo "<h2>06 - Requêtes préparées pour se protéger des injections SQL !</h2>";
+
+// prepare() permet de sécuriser les requêtes pour éviter les injections SQL 
+// Si dans la requête on attend une information de l'utilisateur (saisie ou clic) alors OBLIGATION de faire prepare (dans le doute, on peut toujours lancer nos requêtes en prepare)
+
+$nom = "laborde"; // Information supposée récupérée d'un formulaire. Un utilisateur recherche des employés par une saisie du nom de famille 
+
+// Première étape : Préparation de la requête 
+
+// Première syntaxe possible, avec des "?" remplaçant les valeurs attendues à réinsérer au niveau du execute
+// Cette syntaxe, bien que rapide, manque de lisibilité...
+// $stmt = $pdo->prepare("SELECT * FROM employes WHERE nom = ?");
+// $stmt->execute([$nom]);    // On fourni dans les param du execute, un array qui contient les valeurs à coller à la place de nos ? (DANS L'ORDRE!)
+// $data = $stmt->fetch(PDO::FETCH_ASSOC);
+// var_dump($data);
+
+
+
+// Sur des requêtes à nombreux param, cela complexifie la lisibilité...
+// $stmt = $pdo->prepare("INSERT INTO employes (prenom, nom, sexe, service, salaire, date_embauche) VALUES (?, ?, ?, ?, ?, ?)");
+// $stmt->execute([$prenom, $nom, $sexe, $service, $salaire, $date_embauche]);
+
+
+
+
+// On préfèrera la façon en utilisant des "tokens"   "marqueurs nominatif"
+$stmt = $pdo->prepare("SELECT * FROM employes WHERE nom = :nom"); // On nomme les valeurs attendus par un mot précédé de ":"
+$stmt->bindParam(":nom", $nom, PDO::PARAM_STR); // On bind une valeur à chacun de ces marqueurs nominatifs un par un - Un appel de bindParam, pour lier chaque marqueur ! 
+$stmt->execute();
+$data = $stmt->fetch(PDO::FETCH_ASSOC);
+var_dump($data);
+
+
+
+// $stmt = $pdo->prepare("INSERT INTO employes (prenom, nom, sexe, service, salaire, date_embauche) VALUES (:prenom, :nom, :sexe, :service, :salaire, :date_embauche)");
+// $stmt->bindParam(":nom", $nom, PDO::PARAM_STR);
+// $stmt->bindParam(":prenom", $prenom, PDO::PARAM_STR);
+// $stmt->bindParam(":sexe", $sexe, PDO::PARAM_STR);
+// $stmt->bindParam(":service", $service, PDO::PARAM_STR);
+// $stmt->bindParam(":salaire", $salaire, PDO::PARAM_STR);
+// $stmt->bindParam(":date_embauche", $date_embauche, PDO::PARAM_STR);
+// $stmt->execute();
+// $stmt->execute();
+
+

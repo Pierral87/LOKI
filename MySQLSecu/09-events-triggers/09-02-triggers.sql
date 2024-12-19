@@ -46,8 +46,14 @@ CREATE TABLE IF NOT EXISTS employes_sauvegarde (
   date_embauche date DEFAULT NULL,
   salaire float DEFAULT NULL,
   PRIMARY KEY (id_employes)
-) ENGINE=InnoDB; DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8$
 --# exercice : Faite en sorte d'inscrire des données dans "employes_sauvegarde" pour toute nouvelle insertion dans la table employes (en plus de la maj sur la table employes_informations)
+DELIMITER $ 
+CREATE TRIGGER employes_sauvegarde AFTER INSERT ON employes 
+FOR EACH ROW 
+BEGIN 
+  INSERT INTO employes_sauvegarde (id_employes, prenom, nom, sexe, service, date_embauche, salaire) VALUES (NEW.id_employes, NEW.prenom, NEW.nom, NEW.sexe, NEW.service, NEW.date_embauche, NEW.salaire); 
+  END $
 
 
 --# Exercice 2/ Création d'une table "employes_supprime" : Exactement la méme table que la table employes avec les mémes champs mais vide !
@@ -60,8 +66,17 @@ CREATE TABLE IF NOT EXISTS employes_supprime (
   date_embauche date DEFAULT NULL,
   salaire float DEFAULT NULL,
   PRIMARY KEY (id_employes)
-) ENGINE=InnoDB $DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$
 --# exercice : Faite en sorte d'enregistrer tous les employes supprimés de la table employes, dans cette table. Cela nous servira de corbeille.
+DELIMITER $ 
+CREATE TRIGGER employes_supprime_save BEFORE DELETE ON employes 
+FOR EACH ROW 
+BEGIN 
+  INSERT INTO employes_supprime (id_employes, prenom, nom, sexe, service, date_embauche, salaire) VALUES (OLD.id_employes, OLD.prenom, OLD.nom, OLD.sexe, OLD.service, OLD.date_embauche, OLD.salaire); 
+  UPDATE employes_informations SET nombre = nombre - 1;
+  END $
+
+
 
 --# Exercice 3/ Création de la table "employes_salaire"
 CREATE TABLE IF NOT EXISTS employes_salaire (
@@ -73,8 +88,40 @@ CREATE TABLE IF NOT EXISTS employes_salaire (
   difference int(11) NOT NULL,
   date_modification datetime NOT NULL,
   PRIMARY KEY (id_employes_salaire)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$ ;
 --# exercice : Dés que le salaire d'un employes est changé (et uniquement dans ce cas), nous voulons conserver l'historique des changement de salaire dans une table "employes_salaire"
+
+
+-- Pour lancer un trigger après une action sur un champ spécifique 
+-- Ne fonctionne pas sur MySQL T_T   
+-- Syntaxe pour Oracle : 
+-- CREATE TRIGGER modif_salaire
+-- AFTER UPDATE OF salaire ON employes
+-- FOR EACH ROW
+-- BEGIN
+
+DELIMITER $
+CREATE TRIGGER modif_salaire AFTER UPDATE OF salaire ON employes
+FOR EACH ROW 
+BEGIN 
+  IF (OLD.salaire != NEW.salaire) THEN
+    INSERT INTO employes_salaire (id_employes, ancien, nouveau, difference, date_modification) 
+      VALUES (NEW.id_employes, OLD.salaire, NEW.salaire, (NEW.salaire - OLD.salaire), NOW());
+  END IF;
+END$
+
+
+
+
+DELIMITER $
+CREATE TRIGGER modif_salaire AFTER UPDATE ON employes 
+FOR EACH ROW 
+BEGIN 
+  IF (OLD.salaire != NEW.salaire) THEN
+    INSERT INTO employes_salaire (id_employes, ancien, nouveau, difference, date_modification) 
+      VALUES (NEW.id_employes, OLD.salaire, NEW.salaire, (NEW.salaire - OLD.salaire), NOW());
+  END IF;
+END$
 
 
 --# Exercice 5/ Création dune table "employes_action"
@@ -84,6 +131,38 @@ CREATE TABLE IF NOT EXISTS employes_action (
   requete enum('update','delete','insert') NOT NULL,
   date_action datetime NOT NULL,
   PRIMARY KEY (id_action)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4$
 --# Le but de l'exercice est de repertorier les actions passées sur la table employes (INSERT, UPDATE, DELETE)  - 3 triggers 
 
+DROP TRIGGER IF EXISTS t_modification_employes $
+CREATE TRIGGER t_modification_employes
+BEFORE UPDATE ON employes FOR EACH ROW
+  BEGIN
+    INSERT INTO employes_action
+      (id_employes, requete, date_action)
+    VALUES
+      (NEW.id_employes, 'UPDATE', NOW());
+  END;
+$
+
+DROP TRIGGER IF EXISTS t_suppression_employes $
+CREATE TRIGGER t_suppression_employes
+AFTER DELETE ON employes FOR EACH ROW
+  BEGIN
+    INSERT INTO employes_action
+      (id_employes, requete, date_action)
+    VALUES
+      (OLD.id_employes, 'delete', NOW());
+  END;
+$
+
+DROP TRIGGER IF EXISTS t_ajout_employes $
+CREATE TRIGGER t_ajout_employes
+AFTER INSERT ON employes FOR EACH ROW
+  BEGIN
+    INSERT INTO employes_action
+      (id_employes, requete, date_action)
+    VALUES
+      (NEW.id_employes, 'insert', NOW());
+  END;
+$

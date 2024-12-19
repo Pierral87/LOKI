@@ -87,6 +87,27 @@ CREATE EVENT backup_journal
   date_sortie DATE NOT NULL
 ) ENGINE=InnoDB;
 
+DELIMITER $
+--  STARTS "2024-12-20 00:00:00"
+CREATE EVENT IF NOT EXISTS check_emprunt_retard 
+ON SCHEDULE EVERY 1 DAY
+DO 
+  BEGIN 
+    INSERT INTO emprunts_en_retard (id_abonne, id_livre, date_sortie)  
+      SELECT e.id_abonne, e.id_livre, e.date_sortie  
+        FROM emprunt e
+        WHERE e.date_rendu IS NULL AND e.date_sortie < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND NOT EXISTS(
+        SELECT 1
+        FROM emprunts_en_retard  er
+        WHERE er.id_abonne = e.id_abonne
+        AND er.id_livre = e.id_livre
+        AND er.date_sortie = e.date_sortie
+    );
+  END $
+
+
+
 -- Exercice 2 : Archivage des emprunts terminés
 
 --     Créez une table historique_emprunts pour stocker les emprunts dont la date_rendu est renseignée.
@@ -100,6 +121,20 @@ CREATE TABLE historique_emprunts (
   PRIMARY KEY (id_emprunt)
 ) ENGINE=InnoDB;
 
+-- STARTS CURDATE() + INTERVAL 1 MONTH
+DELIMITER $
+CREATE EVENT IF NOT EXISTS archiver_emprunt 
+ON SCHEDULE EVERY 1 MONTH 
+DO 
+  BEGIN 
+    INSERT INTO historique_emprunts (id_emprunt, id_livre, id_abonne, date_sortie, date_rendu) 
+      SELECT e.id_emprunt, e.id_livre, e.id_abonne, e.date_sortie, e.date_rendu 
+        FROM emprunt e
+        WHERE date_rendu IS NOT NULL;
+        DELETE FROM emprunt WHERE date_rendu IS NOT NULL;
+  END $
+
+
 -- Exercice 3 : Comptage des emprunts mensuels
 
 --     Créez une table stats_emprunts pour stocker les statistiques mensuelles (mois, année, nombre d’emprunts).
@@ -111,6 +146,18 @@ CREATE TABLE stats_emprunts (
   total_emprunts INT NOT NULL
 ) ENGINE=InnoDB;
 
+-- STARTS '2024-12-01 00:00:00'
+CREATE EVENT calculer_stats_mensuelles
+ON SCHEDULE EVERY 1 MONTH 
+DO
+  BEGIN 
+INSERT INTO stats_emprunts (mois, annee, total_emprunts)
+SELECT MONTH(date_sortie), YEAR(date_sortie), COUNT(*)
+FROM emprunt
+WHERE date_sortie BETWEEN DATE_SUB(CURDATE(), INTERVAL 12 YEAR) AND LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+GROUP BY MONTH(date_sortie), YEAR(date_sortie);
+  END $
+
 -- Exercice 4 : Notification d’emprunts par auteur
 
 --     Créez un événement qui exécute tous les jours pour insérer dans une table statistiques_auteurs les statistiques des emprunts par auteur pour les livres empruntés la veille.
@@ -120,3 +167,14 @@ CREATE TABLE statistiques_auteurs (
   total_emprunts INT,
   date_stat DATE
 ) ENGINE=InnoDB;
+
+-- STARTS '2024-11-14 00:00:00'
+CREATE EVENT calculer_stats_auteurs
+ON SCHEDULE EVERY 1 DAY 
+DO
+INSERT INTO statistiques_auteurs (auteur, total_emprunts, date_stat)
+SELECT l.auteur, COUNT(e.id_emprunt), CURDATE() - INTERVAL 1 DAY
+FROM livre l
+JOIN emprunt e ON l.id_livre = e.id_livre
+WHERE e.date_sortie = CURDATE() - INTERVAL 1 DAY
+GROUP BY l.auteur;
